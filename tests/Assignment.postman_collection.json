@@ -1,0 +1,188 @@
+{
+  "info": {
+    "name": "StackGuard Assignment - Scanner API (Generic)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "stackguard-assignment-generic"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "model_id", "value": "" },
+    { "key": "dataset_id", "value": "" },
+    { "key": "space_id", "value": "" },
+    { "key": "org", "value": "" },
+    { "key": "user", "value": "" },
+    { "key": "include_prs", "value": "false" },
+    { "key": "include_discussion", "value": "false" },
+    { "key": "include_prs_bool", "value": "false" },
+    { "key": "include_discussions_bool", "value": "false" },
+    { "key": "request_id", "value": "" },
+    { "key": "scan_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Unified Scan (POST /api/scan)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model_id\": \"{{model_id}}\",\n  \"dataset_id\": \"{{dataset_id}}\",\n  \"space_id\": \"{{space_id}}\",\n  \"org\": \"{{org}}\",\n  \"user\": \"{{user}}\",\n  \"include_discussions\": {{include_discussions_bool}},\n  \"include_prs\": {{include_prs_bool}}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/scan",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","scan"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Fetch Model (creates AI_REQUEST) GET /api/model/:modelId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/model/{{model_id}}?include_prs={{include_prs}}&include_discussion={{include_discussion}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","model","{{model_id}}"],
+          "query": [
+            { "key": "include_prs", "value": "{{include_prs}}" },
+            { "key": "include_discussion", "value": "{{include_discussion}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Fetch Dataset (creates AI_REQUEST) GET /api/dataset/:datasetId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/dataset/{{dataset_id}}?include_prs={{include_prs}}&include_discussion={{include_discussion}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","dataset","{{dataset_id}}"],
+          "query": [
+            { "key": "include_prs", "value": "{{include_prs}}" },
+            { "key": "include_discussion", "value": "{{include_discussion}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Fetch Space (creates AI_REQUEST) GET /api/space/:spaceId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/space/{{space_id}}?include_prs={{include_prs}}&include_discussion={{include_discussion}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","space","{{space_id}}"],
+          "query": [
+            { "key": "include_prs", "value": "{{include_prs}}" },
+            { "key": "include_discussion", "value": "{{include_discussion}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Scan by request_id (POST /api/scan/:request_id)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/scan/{{request_id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","scan","{{request_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Scan By DB ID (POST /api/scan/by-id/:id)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/scan/by-id/{{scan_id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","scan","by-id","{{scan_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Org scan - models (POST /api/scan/org/:org/models)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/scan/org/{{org}}/models",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","scan","org","{{org}}","models"]
+        }
+      }
+    },
+    {
+      "name": "Org scan - datasets (POST /api/scan/org/:org/datasets)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/scan/org/{{org}}/datasets",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","scan","org","{{org}}","datasets"]
+        }
+      }
+    },
+    {
+      "name": "Org scan - spaces (POST /api/scan/org/:org/spaces)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/scan/org/{{org}}/spaces",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","scan","org","{{org}}","spaces"]
+        }
+      }
+    },
+    {
+      "name": "Store Scan Result (POST /api/store)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"scan_id\": \"{{scan_id}}\",\n  \"scanned_resources\": [\n    {\n      \"type\": \"model\",\n      \"id\": \"{{model_id}}\",\n      \"findings\": [\n        {\n          \"secret_type\": \"Example\",\n          \"pattern\": \"PATTERN\",\n          \"secret\": \"REDACTED\",\n          \"file\": \"file.txt\",\n          \"line\": 1\n        }\n      ]\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/store",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","store"]
+        }
+      }
+    },
+    {
+      "name": "Get Scan Results (GET /api/results/:scan_id)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/results/{{scan_id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","results","{{scan_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Dashboard (GET /api/dashboard)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/dashboard",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","dashboard"]
+        }
+      }
+    }
+  ]
+}
