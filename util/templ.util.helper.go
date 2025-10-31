@@ -41,3 +41,4 @@ func GetResourceTypes(result models.SCAN_RESULT) string {
 func GetCurrentTime() string {
 	return "Just now"
 }
+

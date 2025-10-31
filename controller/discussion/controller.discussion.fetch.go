@@ -9,8 +9,8 @@ import (
 	"github.com/kamva/mgm/v3"
 )
 
-// discissons can be of two types: "pr" or "discussion", 
-// this basically fetches them and saves them in db in a way that we know 
+// discissons can be of two types: "pr" or "discussion",
+// this basically fetches them and saves them in db in a way that we know
 // if pr is fetched or discussion is fetched
 func FetchAndSaveDiscussionsByType(resourceType, resourceID, discussionType string) (*models.AI_REQUEST, error) {
 	url := fmt.Sprintf("https://huggingface.co/api/%s/%s/discussions?types=%s&status=all", resourceType, resourceID, discussionType)

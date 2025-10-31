@@ -22,7 +22,7 @@ func RegisterWebRoutes(app *fiber.App) {
 		Compress:      true,
 		ByteRange:     true,
 		Browse:        false,
-		CacheDuration: 24 * 60 * 60, 
+		CacheDuration: 24 * 60 * 60,
 		MaxAge:        86400,
 	})
 
@@ -42,7 +42,7 @@ func RegisterWebRoutes(app *fiber.App) {
 
 	app.Get("/scan", func(c *fiber.Ctx) error {
 		c.Set("Content-Type", "text/html; charset=utf-8")
-		c.Set("Cache-Control", "public, max-age=600") 
+		c.Set("Cache-Control", "public, max-age=600")
 		return templ_ms22.ScanForm().Render(c.Context(), c.Response().BodyWriter())
 	})
 
@@ -51,7 +51,7 @@ func RegisterWebRoutes(app *fiber.App) {
 
 	app.Get("/api-tester", func(c *fiber.Ctx) error {
 		c.Set("Content-Type", "text/html; charset=utf-8")
-		c.Set("Cache-Control", "public, max-age=600") 
+		c.Set("Cache-Control", "public, max-age=600")
 		return templ_ms22.APITester().Render(c.Context(), c.Response().BodyWriter())
 	})
 }

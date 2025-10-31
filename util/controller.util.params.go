@@ -23,8 +23,8 @@ func ParsePagination(c *fiber.Ctx) (page int, limit int) {
 }
 
 // Q. What is the use case of this file?
-// A. Pagination control karne ke liye hai 2nd fucntion 
+// A. Pagination control karne ke liye hai 2nd fucntion
 // and pehle function just includes flags as query params.
-// Basically kya hai na ho sakta hai 
+// Basically kya hai na ho sakta hai
 // we send query params like ?include_prs=true&include_discussion=false
 // bass is process ko standardize karne ke liye ye file hai.

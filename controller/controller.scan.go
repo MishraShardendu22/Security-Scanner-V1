@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/MishraShardendu22/Scanner/models"
@@ -126,15 +127,58 @@ func ScanOrgModels(c *fiber.Ctx) error {
 
 	allFindings, scannedCount, err := util.ScanOrgResources(org, util.ResourceTypeModel)
 	if err != nil {
-		statusCode := fiber.StatusInternalServerError
-		if err.Error() == fmt.Sprintf("no %s found for this organization", util.ResourceTypeModel) {
-			statusCode = fiber.StatusNotFound
+		notFoundMsg := fmt.Sprintf("no %s found for this organization", util.ResourceTypeModel)
+		if strings.Contains(err.Error(), notFoundMsg) {
+			includePRs, includeDiscussion := util.ParseIncludeFlags(c)
+			log.Printf(
+				"op=ScanOrgModels stage=auto_populate_start request_id=%s org=%s include_prs=%t include_discussion=%t",
+				requestID, org, includePRs, includeDiscussion,
+			)
+			_, saved, fetchErr := util.FetchOrgResources(c, org, util.ResourceTypeModel, includePRs, includeDiscussion)
+			if fetchErr != nil {
+				log.Printf(
+					"op=ScanOrgModels stage=auto_populate_error request_id=%s org=%s error=%v elapsed=%s",
+					requestID, org, fetchErr, time.Since(start),
+				)
+				log.Printf(
+					"op=ScanOrgModels stage=not_found_fallback_live_scan request_id=%s org=%s elapsed=%s",
+					requestID, org, time.Since(start),
+				)
+				return scanOrganization(c, org, includePRs, includeDiscussion, "org-scan-"+org)
+			}
+
+			log.Printf(
+				"op=ScanOrgModels stage=auto_populate_done request_id=%s org=%s saved=%d elapsed=%s",
+				requestID, org, len(saved), time.Since(start),
+			)
+
+			if len(saved) > 0 {
+				log.Printf(
+					"op=ScanOrgModels stage=scan_by_ids_start request_id=%s org=%s ids=%d",
+					requestID, org, len(saved),
+				)
+				allFindings, scannedCount, err = util.ScanResourcesByIDs(saved, util.ResourceTypeModel, includePRs, includeDiscussion)
+				if err != nil {
+					log.Printf(
+						"op=ScanOrgModels stage=scan_by_ids_error request_id=%s org=%s error=%v elapsed=%s",
+						requestID, org, err, time.Since(start),
+					)
+					return util.ResponseAPI(c, fiber.StatusInternalServerError, err.Error(), nil, "")
+				}
+			} else {
+				log.Printf(
+					"op=ScanOrgModels stage=auto_populate_none request_id=%s org=%s elapsed=%s",
+					requestID, org, time.Since(start),
+				)
+				return scanOrganization(c, org, includePRs, includeDiscussion, "org-scan-"+org)
+			}
+		} else {
+			log.Printf(
+				"op=ScanOrgModels stage=scan_error request_id=%s org=%s error=%v elapsed=%s",
+				requestID, org, err, time.Since(start),
+			)
+			return util.ResponseAPI(c, fiber.StatusInternalServerError, err.Error(), nil, "")
 		}
-		log.Printf(
-			"op=ScanOrgModels stage=scan_error request_id=%s org=%s error=%v elapsed=%s",
-			requestID, org, err, time.Since(start),
-		)
-		return util.ResponseAPI(c, statusCode, err.Error(), nil, "")
 	}
 
 	scannedResources := util.GroupFindingsByResource(allFindings)
@@ -181,15 +225,56 @@ func ScanOrgDatasets(c *fiber.Ctx) error {
 
 	allFindings, scannedCount, err := util.ScanOrgResources(org, util.ResourceTypeDataset)
 	if err != nil {
-		statusCode := fiber.StatusInternalServerError
-		if err.Error() == fmt.Sprintf("no %s found for this organization", util.ResourceTypeDataset) {
-			statusCode = fiber.StatusNotFound
+		notFoundMsg := fmt.Sprintf("no %s found for this organization", util.ResourceTypeDataset)
+		if strings.Contains(err.Error(), notFoundMsg) {
+			includePRs, includeDiscussion := util.ParseIncludeFlags(c)
+			log.Printf(
+				"op=ScanOrgDatasets stage=auto_populate_start request_id=%s org=%s include_prs=%t include_discussion=%t",
+				requestID, org, includePRs, includeDiscussion,
+			)
+			_, saved, fetchErr := util.FetchOrgResources(c, org, util.ResourceTypeDataset, includePRs, includeDiscussion)
+			if fetchErr != nil {
+				log.Printf(
+					"op=ScanOrgDatasets stage=auto_populate_error request_id=%s org=%s error=%v elapsed=%s",
+					requestID, org, fetchErr, time.Since(start),
+				)
+				log.Printf(
+					"op=ScanOrgDatasets stage=not_found_fallback_live_scan request_id=%s org=%s elapsed=%s",
+					requestID, org, time.Since(start),
+				)
+				return scanOrganization(c, org, includePRs, includeDiscussion, "org-scan-"+org)
+			}
+			log.Printf(
+				"op=ScanOrgDatasets stage=auto_populate_done request_id=%s org=%s saved=%d elapsed=%s",
+				requestID, org, len(saved), time.Since(start),
+			)
+			if len(saved) > 0 {
+				log.Printf(
+					"op=ScanOrgDatasets stage=scan_by_ids_start request_id=%s org=%s ids=%d",
+					requestID, org, len(saved),
+				)
+				allFindings, scannedCount, err = util.ScanResourcesByIDs(saved, util.ResourceTypeDataset, includePRs, includeDiscussion)
+				if err != nil {
+					log.Printf(
+						"op=ScanOrgDatasets stage=scan_by_ids_error request_id=%s org=%s error=%v elapsed=%s",
+						requestID, org, err, time.Since(start),
+					)
+					return util.ResponseAPI(c, fiber.StatusInternalServerError, err.Error(), nil, "")
+				}
+			} else {
+				log.Printf(
+					"op=ScanOrgDatasets stage=auto_populate_none request_id=%s org=%s elapsed=%s",
+					requestID, org, time.Since(start),
+				)
+				return scanOrganization(c, org, includePRs, includeDiscussion, "org-scan-"+org)
+			}
+		} else {
+			log.Printf(
+				"op=ScanOrgDatasets stage=scan_error request_id=%s org=%s error=%v elapsed=%s",
+				requestID, org, err, time.Since(start),
+			)
+			return util.ResponseAPI(c, fiber.StatusInternalServerError, err.Error(), nil, "")
 		}
-		log.Printf(
-			"op=ScanOrgDatasets stage=scan_error request_id=%s org=%s error=%v elapsed=%s",
-			requestID, org, err, time.Since(start),
-		)
-		return util.ResponseAPI(c, statusCode, err.Error(), nil, "")
 	}
 
 	scannedResources := util.GroupFindingsByResource(allFindings)
@@ -236,15 +321,56 @@ func ScanOrgSpaces(c *fiber.Ctx) error {
 
 	allFindings, scannedCount, err := util.ScanOrgResources(org, util.ResourceTypeSpace)
 	if err != nil {
-		statusCode := fiber.StatusInternalServerError
-		if err.Error() == fmt.Sprintf("no %s found for this organization", util.ResourceTypeSpace) {
-			statusCode = fiber.StatusNotFound
+		notFoundMsg := fmt.Sprintf("no %s found for this organization", util.ResourceTypeSpace)
+		if strings.Contains(err.Error(), notFoundMsg) {
+			includePRs, includeDiscussion := util.ParseIncludeFlags(c)
+			log.Printf(
+				"op=ScanOrgSpaces stage=auto_populate_start request_id=%s org=%s include_prs=%t include_discussion=%t",
+				requestID, org, includePRs, includeDiscussion,
+			)
+			_, saved, fetchErr := util.FetchOrgResources(c, org, util.ResourceTypeSpace, includePRs, includeDiscussion)
+			if fetchErr != nil {
+				log.Printf(
+					"op=ScanOrgSpaces stage=auto_populate_error request_id=%s org=%s error=%v elapsed=%s",
+					requestID, org, fetchErr, time.Since(start),
+				)
+				log.Printf(
+					"op=ScanOrgSpaces stage=not_found_fallback_live_scan request_id=%s org=%s elapsed=%s",
+					requestID, org, time.Since(start),
+				)
+				return scanOrganization(c, org, includePRs, includeDiscussion, "org-scan-"+org)
+			}
+			log.Printf(
+				"op=ScanOrgSpaces stage=auto_populate_done request_id=%s org=%s saved=%d elapsed=%s",
+				requestID, org, len(saved), time.Since(start),
+			)
+			if len(saved) > 0 {
+				log.Printf(
+					"op=ScanOrgSpaces stage=scan_by_ids_start request_id=%s org=%s ids=%d",
+					requestID, org, len(saved),
+				)
+				allFindings, scannedCount, err = util.ScanResourcesByIDs(saved, util.ResourceTypeSpace, includePRs, includeDiscussion)
+				if err != nil {
+					log.Printf(
+						"op=ScanOrgSpaces stage=scan_by_ids_error request_id=%s org=%s error=%v elapsed=%s",
+						requestID, org, err, time.Since(start),
+					)
+					return util.ResponseAPI(c, fiber.StatusInternalServerError, err.Error(), nil, "")
+				}
+			} else {
+				log.Printf(
+					"op=ScanOrgSpaces stage=auto_populate_none request_id=%s org=%s elapsed=%s",
+					requestID, org, time.Since(start),
+				)
+				return scanOrganization(c, org, includePRs, includeDiscussion, "org-scan-"+org)
+			}
+		} else {
+			log.Printf(
+				"op=ScanOrgSpaces stage=scan_error request_id=%s org=%s error=%v elapsed=%s",
+				requestID, org, err, time.Since(start),
+			)
+			return util.ResponseAPI(c, fiber.StatusInternalServerError, err.Error(), nil, "")
 		}
-		log.Printf(
-			"op=ScanOrgSpaces stage=scan_error request_id=%s org=%s error=%v elapsed=%s",
-			requestID, org, err, time.Since(start),
-		)
-		return util.ResponseAPI(c, statusCode, err.Error(), nil, "")
 	}
 
 	scannedResources := util.GroupFindingsByResource(allFindings)

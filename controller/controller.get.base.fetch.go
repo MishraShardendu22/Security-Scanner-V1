@@ -277,7 +277,7 @@ func FetchSpace(c *fiber.Ctx) error {
 			"op=FetchSpace stage=fetch_discussions_done request_id=%s space_id=%s discussions=%d",
 			requestID, spaceID, len(discussions),
 		)
-	
+
 	}
 
 	if err := mgm.Coll(aiRequest).Create(aiRequest); err != nil {
@@ -436,8 +436,8 @@ func FetchDiscussions(c *fiber.Ctx) error {
 		requestID, c.Method(), c.OriginalURL(), resourceType, resourceID, c.IP(), c.Get("User-Agent"),
 	)
 
-	// discissons can be of two types: "pr" or "discussion", 
-	// this basically fetches them and saves them in db in a way that we know 
+	// discissons can be of two types: "pr" or "discussion",
+	// this basically fetches them and saves them in db in a way that we know
 	// if pr is fetched or discussion is fetched
 	// if both, pr and discussion are needed, we call this twice
 	aiRequest, err := discussion.FetchAndSaveDiscussionsByType(resourceType, resourceID, "discussion")

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/kamva/mgm/v3"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func init() {
@@ -47,12 +49,32 @@ func FetchOrgResources(
 	// ye basically return karta hai array of models, spaces ya datasets
 	// uss array se ham nikal sakte ya zaruuri details
 	// eg - siblings (readable files), readme, etc.
-	resp, err := httpClient.Get(url)
+	var resp *http.Response
+	var err error
+	for attempt := 1; attempt <= 3; attempt++ {
+		resp, err = httpClient.Get(url)
+		if err != nil {
+			log.Printf(
+				"op=FetchOrgResources stage=http_get_error request_id=%s org=%s resource_type=%s url=%s error=%v attempt=%d elapsed=%s",
+				requestID, org, resourceType, url, err, attempt, time.Since(start),
+			)
+			time.Sleep(time.Duration(attempt) * 300 * time.Millisecond)
+			continue
+		}
+		if resp.StatusCode == http.StatusOK {
+			break
+		}
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
+			log.Printf(
+				"op=FetchOrgResources stage=retryable_status request_id=%s org=%s resource_type=%s status=%d attempt=%d",
+				requestID, org, resourceType, resp.StatusCode, attempt,
+			)
+			time.Sleep(time.Duration(attempt) * 300 * time.Millisecond)
+			continue
+		}
+		break
+	}
 	if err != nil {
-		log.Printf(
-			"op=FetchOrgResources stage=http_get_error request_id=%s org=%s resource_type=%s url=%s error=%v elapsed=%s",
-			requestID, org, resourceType, url, err, time.Since(start),
-		)
 		return nil, nil, fmt.Errorf("failed to fetch %s", resourceType)
 	}
 	defer resp.Body.Close()
@@ -61,6 +83,10 @@ func FetchOrgResources(
 		"op=FetchOrgResources stage=got_response request_id=%s org=%s resource_type=%s status=%d content_length=%q elapsed=%s",
 		requestID, org, resourceType, resp.StatusCode, resp.Header.Get("Content-Length"), time.Since(start),
 	)
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, nil, fmt.Errorf("failed to fetch %s: status=%d", resourceType, resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -102,6 +128,7 @@ func FetchOrgResources(
 	// models will give array of models for that org
 	// spaces will give array of spaces for that org
 	// datasets will give array of datasets for that org
+	seen := make(map[string]struct{}, total)
 	for idx, resourceData := range resourcesData {
 		resourceID, ok := resourceData["id"].(string)
 		if !ok {
@@ -111,6 +138,11 @@ func FetchOrgResources(
 			)
 			continue
 		}
+		if _, dup := seen[resourceID]; dup {
+			continue
+		}
+		seen[resourceID] = struct{}{}
+
 		wg.Add(1)
 		go func(id string, index int) {
 			defer wg.Done()
@@ -142,10 +174,17 @@ func FetchOrgResources(
 						requestID, resourceType, id, time.Since(localStart),
 					)
 				} else {
-					log.Printf(
-						"op=FetchOrgResources stage=db_create_error request_id=%s resource_type=%s id=%s error=%v elapsed=%s",
-						requestID, resourceType, id, err, time.Since(localStart),
-					)
+					if mongo.IsDuplicateKeyError(err) {
+						log.Printf(
+							"op=FetchOrgResources stage=duplicate request_id=%s resource_type=%s id=%s elapsed=%s",
+							requestID, resourceType, id, time.Since(localStart),
+						)
+					} else {
+						log.Printf(
+							"op=FetchOrgResources stage=db_create_error request_id=%s resource_type=%s id=%s error=%v elapsed=%s",
+							requestID, resourceType, id, err, time.Since(localStart),
+						)
+					}
 				}
 			case ResourceTypeDataset:
 				model := &models.AI_DATASETS{
@@ -165,10 +204,17 @@ func FetchOrgResources(
 						requestID, resourceType, id, time.Since(localStart),
 					)
 				} else {
-					log.Printf(
-						"op=FetchOrgResources stage=db_create_error request_id=%s resource_type=%s id=%s error=%v elapsed=%s",
-						requestID, resourceType, id, err, time.Since(localStart),
-					)
+					if mongo.IsDuplicateKeyError(err) {
+						log.Printf(
+							"op=FetchOrgResources stage=duplicate request_id=%s resource_type=%s id=%s elapsed=%s",
+							requestID, resourceType, id, time.Since(localStart),
+						)
+					} else {
+						log.Printf(
+							"op=FetchOrgResources stage=db_create_error request_id=%s resource_type=%s id=%s error=%v elapsed=%s",
+							requestID, resourceType, id, err, time.Since(localStart),
+						)
+					}
 				}
 			case ResourceTypeSpace:
 				model := &models.AI_SPACES{
@@ -188,10 +234,17 @@ func FetchOrgResources(
 						requestID, resourceType, id, time.Since(localStart),
 					)
 				} else {
-					log.Printf(
-						"op=FetchOrgResources stage=db_create_error request_id=%s resource_type=%s id=%s error=%v elapsed=%s",
-						requestID, resourceType, id, err, time.Since(localStart),
-					)
+					if mongo.IsDuplicateKeyError(err) {
+						log.Printf(
+							"op=FetchOrgResources stage=duplicate request_id=%s resource_type=%s id=%s elapsed=%s",
+							requestID, resourceType, id, time.Since(localStart),
+						)
+					} else {
+						log.Printf(
+							"op=FetchOrgResources stage=db_create_error request_id=%s resource_type=%s id=%s error=%v elapsed=%s",
+							requestID, resourceType, id, err, time.Since(localStart),
+						)
+					}
 				}
 			}
 		}(resourceID, idx)

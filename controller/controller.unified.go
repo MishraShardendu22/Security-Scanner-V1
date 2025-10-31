@@ -137,24 +137,8 @@ func UnifiedScan(c *fiber.Ctx) error {
 	}
 
 	log.Printf(
-		"op=UnifiedScan stage=save_request_start trace_id=%s request_id=%s",
-		traceID, requestID,
-	)
-	if err := mgm.Coll(aiRequest).Create(aiRequest); err != nil {
-		log.Printf(
-			"op=UnifiedScan stage=save_request_error trace_id=%s request_id=%s error=%v elapsed=%s",
-			traceID, requestID, err, time.Since(start),
-		)
-		return util.ResponseAPI(c, fiber.StatusInternalServerError, "Failed to save request", nil, "")
-	}
-	log.Printf(
-		"op=UnifiedScan stage=save_request_done trace_id=%s request_id=%s",
-		traceID, requestID,
-	)
-
-	log.Printf(
-		"op=UnifiedScan stage=scanning_start trace_id=%s request_id=%s resource_type=%s resource_id=%s",
-		traceID, requestID, resourceType, resourceID,
+		"op=UnifiedScan stage=scanning_start trace_id=%s request_id=%s resource_type=%s resource_id=%s files=%d discussions=%d",
+		traceID, requestID, resourceType, resourceID, len(aiRequest.Siblings), len(aiRequest.Discussions),
 	)
 	findings := util.ScanAIRequest(*aiRequest, util.SecretConfig, resourceType, resourceID)
 	log.Printf(
@@ -186,8 +170,8 @@ func UnifiedScan(c *fiber.Ctx) error {
 	scannedResources = append(scannedResources, scannedResource)
 
 	log.Printf(
-		"op=UnifiedScan stage=save_scan_result_start trace_id=%s request_id=%s scanned_resources=%d",
-		traceID, requestID, len(scannedResources),
+		"op=UnifiedScan stage=save_scan_result_start trace_id=%s request_id=%s scanned_resources=%d total_findings=%d",
+		traceID, requestID, len(scannedResources), len(findings),
 	)
 	scanResult := &models.SCAN_RESULT{
 		RequestID:        requestID,
@@ -220,7 +204,7 @@ func UnifiedScan(c *fiber.Ctx) error {
 	}
 
 	log.Printf(
-		"op=UnifiedScan stage=success trace_id=%s request_id=%s scan_id=%s total_findings=%d elapsed=%s",
+		"op=UnifiedScan stage=success trace_id=%s request_id=%s scan_id=%s total_findings=%d total_elapsed=%s",
 		traceID, requestID, scanID, len(findings), time.Since(start),
 	)
 
@@ -288,8 +272,7 @@ func StoreScanResult(c *fiber.Ctx) error {
 						}
 					}
 				}
-				sCAN := resource
-				scanResult.ScannedResources = append(scanResult.ScannedResources, sCAN)
+				scanResult.ScannedResources = append(scanResult.ScannedResources, resource)
 			}
 		}
 	}
@@ -561,3 +544,13 @@ func scanOrganization(c *fiber.Ctx, org string, includePRs, includeDiscussions b
 
 	return util.ResponseAPI(c, fiber.StatusOK, "Organization scan completed successfully", response, "")
 }
+
+/*
+mistake -
+database me file nahi store kar rahe h 16 mb limit og mongodb, in memory save kar rahe h
+instead we can save the url for the file and scan it in memory.
+
+i was saving in database cause waht if server crashes mid scan atleast we have data in DATABASE
+but wrong appraoch database me file save karna
+file are always available , even on server restart we will have to start agian cant resume rigth ?
+*/
