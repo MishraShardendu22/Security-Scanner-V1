@@ -8,7 +8,6 @@ A high-performance secret scanner for Git repositories written in Go. Detects AP
 **Live Demo:** [Watch on YouTube](https://www.youtube.com/watch?v=IdLwaDjCESQ)
 
 [![Go Version](https://img.shields.io/badge/Go-1.18+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![License](https://img.shields.io/badge/License-Not_Specified-red)]()
 
 ## Table of Contents
 
