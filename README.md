@@ -1,4 +1,4 @@
-# Security-Scanner-V1
+# Security-Scanner-V1 Done 
 
 **Note** - Scans Hugging Face for security vulnerabilities. Not working properly. Making a better versoin v2.
 Here's an improved version of your README with professional structure, clarity, and current best practices:
